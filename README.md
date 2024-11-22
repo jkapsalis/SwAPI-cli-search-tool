@@ -40,11 +40,11 @@ Clone the repository and follow the commands to run the script   :)
 
 1. *def get_all_chars():*
 
-    Fetches all characters from the SWAPI.
-Converts the response into JSON and extracts the results.
+    Gets all the characters from the SWAPI.
+Converts the data response into JSON and extract all the info.
 2. *def get_char_details(char_url):*
 
-    Fetches detailed properties of a character or a planet from the provided URL.
+    Gets the properties of a character or a planet from the URL.
 
 3. *def search_char_name(results, name):*
 
@@ -52,4 +52,4 @@ Converts the response into JSON and extracts the results.
 4. *Main*  
 
     Uses argparse to handle CLI commands and flags.
-Displays character and homeworld details based on user input.
+Prints character and homeworld information based on the user's input.
