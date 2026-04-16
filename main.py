@@ -1,16 +1,31 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+import argparse
+from swapi import search_character, get_resource
+from utils import format_character, format_homeworld, calculate_time_ratio
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+def main():
+    parser = argparse.ArgumentParser(description="Star Wars CLI Search Tool")
+    parser.add_argument("command", choices=["search"])
+    parser.add_argument("name", help="Character name")
+    parser.add_argument("--world", action="store_true", help="Show homeworld info")
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    args = parser.parse_args()
+
+    if args.command == "search":
+        results = search_character(args.name)
+
+        if not results:
+            print("Character not found.")
+            return
+
+        char = results[0]
+        print(format_character(char))
+
+        if args.world:
+            world = get_resource(char["homeworld"])
+            print(format_homeworld(world))
+            print(calculate_time_ratio(world))
+
+
+if __name__ == "__main__":
+    main()
