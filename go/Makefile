@@ -3,11 +3,14 @@ PKG       := ./cmd/swapi
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 GOFLAGS   := -trimpath -ldflags="-s -w"
 
-.PHONY: build release clean
+.PHONY: build test release clean
 
 # Static binary for the current platform.
 build:
 	CGO_ENABLED=0 go build $(GOFLAGS) -o bin/$(BINARY) $(PKG)
+
+test:
+	go test -race ./...
 
 # Static binaries for every platform in PLATFORMS, written to dist/.
 release:

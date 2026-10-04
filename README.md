@@ -76,6 +76,9 @@ A Go port of the CLI lives in [`go/`](go). It has no third-party dependencies (G
     ###binaries for linux, macOS and windows -> dist/###
     make release
 
+    ###unit tests (offline, against a fake SWAPI server, with the race detector)###
+    make test
+
 Layout:
 
 * `cmd/swapi` - entry point
@@ -129,7 +132,7 @@ As part of expanding this project and improving my backend development skills, I
 - Compile the Go program into a standalone binary.
 - Allow users to run the tool without installing dependencies.
 
-### 8. Testing
+### 8. Testing ✅
 - Write unit tests for:
   - API calls
   - Search functionality
