@@ -1,8 +1,7 @@
-package api
+package tests
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,22 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/api"
 	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/models"
 )
-
-func newTestServer(t *testing.T, h http.HandlerFunc) *httptest.Server {
-	t.Helper()
-	srv := httptest.NewServer(h)
-	t.Cleanup(srv.Close)
-	return srv
-}
-
-func writeJSON(t *testing.T, w http.ResponseWriter, v any) {
-	t.Helper()
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		t.Errorf("encode response: %v", err)
-	}
-}
 
 func TestSearchCharactersSinglePage(t *testing.T) {
 	var srv *httptest.Server
@@ -53,7 +39,7 @@ func TestSearchCharactersSinglePage(t *testing.T) {
 		})
 	})
 
-	got, err := NewClient(srv.URL).SearchCharacters(context.Background(), "luke sky")
+	got, err := api.NewClient(srv.URL).SearchCharacters(context.Background(), "luke sky")
 	if err != nil {
 		t.Fatalf("SearchCharacters: %v", err)
 	}
@@ -79,7 +65,7 @@ func TestSearchCharactersMultiPage(t *testing.T) {
 		writeJSON(t, w, map[string]any{"count": total, "results": results})
 	})
 
-	got, err := NewClient(srv.URL).SearchCharacters(context.Background(), "char")
+	got, err := api.NewClient(srv.URL).SearchCharacters(context.Background(), "char")
 	if err != nil {
 		t.Fatalf("SearchCharacters: %v", err)
 	}
@@ -101,9 +87,9 @@ func TestSearchCharactersNotFound(t *testing.T) {
 		writeJSON(t, w, map[string]any{"count": 0, "results": []any{}})
 	})
 
-	_, err := NewClient(srv.URL).SearchCharacters(context.Background(), "nobody")
-	if !errors.Is(err, ErrNotFound) {
-		t.Errorf("err = %v, want ErrNotFound", err)
+	_, err := api.NewClient(srv.URL).SearchCharacters(context.Background(), "nobody")
+	if !errors.Is(err, api.ErrNotFound) {
+		t.Errorf("err = %v, want api.ErrNotFound", err)
 	}
 }
 
@@ -112,8 +98,8 @@ func TestSearchCharactersStatusError(t *testing.T) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	})
 
-	_, err := NewClient(srv.URL).SearchCharacters(context.Background(), "luke")
-	var se *StatusError
+	_, err := api.NewClient(srv.URL).SearchCharacters(context.Background(), "luke")
+	var se *api.StatusError
 	if !errors.As(err, &se) || se.StatusCode != http.StatusServiceUnavailable {
 		t.Errorf("err = %v, want StatusError with status 503", err)
 	}
@@ -128,8 +114,8 @@ func TestSearchCharactersLaterPageError(t *testing.T) {
 		writeJSON(t, w, map[string]any{"count": 11, "results": make([]models.Character, 10)})
 	})
 
-	_, err := NewClient(srv.URL).SearchCharacters(context.Background(), "a")
-	var se *StatusError
+	_, err := api.NewClient(srv.URL).SearchCharacters(context.Background(), "a")
+	var se *api.StatusError
 	if !errors.As(err, &se) || se.StatusCode != http.StatusInternalServerError {
 		t.Errorf("err = %v, want StatusError with status 500", err)
 	}
@@ -142,7 +128,7 @@ func TestSearchCharactersCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := NewClient(srv.URL).SearchCharacters(ctx, "luke")
+	_, err := api.NewClient(srv.URL).SearchCharacters(ctx, "luke")
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("err = %v, want context.Canceled", err)
 	}
@@ -153,7 +139,7 @@ func TestGetPlanetInvalidJSON(t *testing.T) {
 		fmt.Fprint(w, "not json")
 	})
 
-	_, err := NewClient(srv.URL).GetPlanet(context.Background(), srv.URL+"/planets/1/")
+	_, err := api.NewClient(srv.URL).GetPlanet(context.Background(), srv.URL+"/planets/1/")
 	if err == nil || !strings.Contains(err.Error(), "decode") {
 		t.Errorf("err = %v, want decode error", err)
 	}
@@ -165,7 +151,7 @@ func TestGetPlanetCachesSuccess(t *testing.T) {
 		requests.Add(1)
 		writeJSON(t, w, models.Planet{Name: "Tatooine"})
 	})
-	c := NewClient(srv.URL)
+	c := api.NewClient(srv.URL)
 
 	for range 3 {
 		p, err := c.GetPlanet(context.Background(), srv.URL+"/planets/1/")
@@ -187,7 +173,7 @@ func TestGetPlanetDoesNotCacheFailure(t *testing.T) {
 		}
 		writeJSON(t, w, models.Planet{Name: "Tatooine"})
 	})
-	c := NewClient(srv.URL)
+	c := api.NewClient(srv.URL)
 	u := srv.URL + "/planets/1/"
 
 	if _, err := c.GetPlanet(context.Background(), u); err == nil {
@@ -211,7 +197,7 @@ func TestGetPlanetsKeepsOrderAndDedupes(t *testing.T) {
 	})
 
 	urls := []string{srv.URL + "/planets/1/", srv.URL + "/planets/2/", srv.URL + "/planets/1/"}
-	got, err := NewClient(srv.URL).GetPlanets(context.Background(), urls)
+	got, err := api.NewClient(srv.URL).GetPlanets(context.Background(), urls)
 	if err != nil {
 		t.Fatalf("GetPlanets: %v", err)
 	}
@@ -249,7 +235,7 @@ func TestGetPlanetsFetchesInParallel(t *testing.T) {
 	for i := range urls {
 		urls[i] = fmt.Sprintf("%s/planets/%d/", srv.URL, i+1)
 	}
-	if _, err := NewClient(srv.URL).GetPlanets(context.Background(), urls); err != nil {
+	if _, err := api.NewClient(srv.URL).GetPlanets(context.Background(), urls); err != nil {
 		t.Fatalf("GetPlanets: %v", err)
 	}
 }

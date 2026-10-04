@@ -1,16 +1,23 @@
-package cli
+package tests
 
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/api"
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/cli"
 	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/models"
+)
+
+// Exit codes documented in the README.
+const (
+	exitOK    = 0
+	exitError = 1
+	exitUsage = 2
 )
 
 // newFakeSWAPI serves a tiny subset of SWAPI: searches for "luke", "sky",
@@ -18,7 +25,7 @@ import (
 func newFakeSWAPI(t *testing.T) *httptest.Server {
 	t.Helper()
 	var srv *httptest.Server
-	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv = newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		tatooine := srv.URL + "/planets/1/"
 		luke := models.Character{Name: "Luke Skywalker", Height: "172", Mass: "77", BirthYear: "19BBY", Homeworld: tatooine}
 		anakin := models.Character{Name: "Anakin Skywalker", Height: "188", Mass: "84", BirthYear: "41.9BBY", Homeworld: tatooine}
@@ -43,20 +50,21 @@ func newFakeSWAPI(t *testing.T) *httptest.Server {
 			http.NotFound(w, r)
 			return
 		}
-		if err := json.NewEncoder(w).Encode(body); err != nil {
-			t.Errorf("encode response: %v", err)
-		}
-	}))
-	t.Cleanup(srv.Close)
+		writeJSON(t, w, body)
+	})
 	return srv
+}
+
+func runCLI(t *testing.T, srv *httptest.Server, args ...string) (code int, stdout, stderr string) {
+	t.Helper()
+	var out, errOut bytes.Buffer
+	code = cli.Run(context.Background(), args, &out, &errOut, api.NewClient(srv.URL))
+	return code, out.String(), errOut.String()
 }
 
 func run(t *testing.T, args ...string) (code int, stdout, stderr string) {
 	t.Helper()
-	srv := newFakeSWAPI(t)
-	var out, errOut bytes.Buffer
-	code = Run(context.Background(), args, &out, &errOut, api.NewClient(srv.URL))
-	return code, out.String(), errOut.String()
+	return runCLI(t, newFakeSWAPI(t), args...)
 }
 
 func TestRunWorldOutput(t *testing.T) {
@@ -207,6 +215,8 @@ func TestRun(t *testing.T) {
 	}
 }
 
+// TestTimeRatio checks the day and year ratios through the --world output,
+// since the ratio helper is unexported.
 func TestTimeRatio(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -221,8 +231,24 @@ func TestTimeRatio(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := timeRatio(tt.planet); got != tt.want {
-				t.Errorf("timeRatio() = %q, want %q", got, tt.want)
+			var srv *httptest.Server
+			srv = newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/planets/1/" {
+					writeJSON(t, w, tt.planet)
+					return
+				}
+				writeJSON(t, w, map[string]any{
+					"count":   1,
+					"results": []models.Character{{Name: "Tester", Homeworld: srv.URL + "/planets/1/"}},
+				})
+			})
+
+			code, stdout, stderr := runCLI(t, srv, "search", "tester", "--world")
+			if code != exitOK {
+				t.Fatalf("exit code = %d, stderr = %q", code, stderr)
+			}
+			if !strings.HasSuffix(stdout, "\n"+tt.want) {
+				t.Errorf("stdout =\n%s\nwant it to end with\n%s", stdout, tt.want)
 			}
 		})
 	}

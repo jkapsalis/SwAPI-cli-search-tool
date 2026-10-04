@@ -90,7 +90,7 @@ The remake treats the project as a small piece of production software instead of
 | Concurrency | Sequential requests | Result pages and homeworlds fetched in parallel; repeated requests served from a cache |
 | Data model | Dictionaries | Typed `Character` and `Planet` structs |
 | Error handling | Generic exceptions, bare `except` | Typed errors and distinct exit codes |
-| Testing | None | Unit tests run with the race detector, 94% statement coverage |
+| Testing | None | Unit tests run with the race detector, 97% statement coverage |
 | Platforms | Wherever Python is installed | Cross-compiled for Linux and macOS (amd64, arm64) and Windows (amd64) |
 
 The main reasons for choosing Go:
@@ -111,6 +111,7 @@ Go/
 ├── internal/cli/       Argument parsing and output formatting
 ├── internal/api/       SWAPI client: HTTP calls, parallel fetching, cache
 ├── internal/models/    Character and Planet types
+├── tests/              Unit tests for the api and cli packages
 └── Makefile            build, test and release targets
 ```
 
@@ -127,7 +128,7 @@ Run these from the `Go/` folder:
 | `make release` | Builds binaries for Linux, macOS and Windows in `dist/` |
 | `make clean` | Removes `bin/` and `dist/` |
 
-The tests use Go's `testing` package and `net/http/httptest`. They cover search across several pages, not-found and HTTP errors, request cancellation, caching, parallel fetching, CLI flags, exit codes and the exact output format.
+The tests live in `Go/tests/` and use Go's `testing` package and `net/http/httptest`. They test each package only through its exported API, the same way a user of the package would. They cover search across several pages, not-found and HTTP errors, request cancellation, caching, parallel fetching, CLI flags, exit codes and the exact output format.
 
 ## Roadmap
 
