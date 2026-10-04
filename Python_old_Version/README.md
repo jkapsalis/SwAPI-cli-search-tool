@@ -3,7 +3,7 @@
 The original Python prototype of this project. It is no longer maintained.
 
 - Current version: [`Go/`](../Go)
-- Why it was rewritten: [Why the remake](../README.md#why-the-remake)
+- Why it was rewritten: [Why Go over Python](../README.md#why-go-over-python)
 
 ## Features
 
