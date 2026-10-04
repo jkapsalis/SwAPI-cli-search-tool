@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jkapsalis/SwAPI-cli-search-tool/go/internal/api"
-	"github.com/jkapsalis/SwAPI-cli-search-tool/go/internal/models"
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/api"
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/models"
 )
 
 const (

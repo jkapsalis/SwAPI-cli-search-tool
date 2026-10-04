@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jkapsalis/SwAPI-cli-search-tool/go/internal/models"
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/models"
 )
 
 const DefaultBaseURL = "https://swapi.dev/api"

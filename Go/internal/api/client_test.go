@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jkapsalis/SwAPI-cli-search-tool/go/internal/models"
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/models"
 )
 
 func newTestServer(t *testing.T, h http.HandlerFunc) *httptest.Server {

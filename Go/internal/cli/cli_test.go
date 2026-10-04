@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jkapsalis/SwAPI-cli-search-tool/go/internal/api"
-	"github.com/jkapsalis/SwAPI-cli-search-tool/go/internal/models"
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/api"
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/models"
 )
 
 // newFakeSWAPI serves a tiny subset of SWAPI: searches for "luke", "sky",

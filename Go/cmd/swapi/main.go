@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/jkapsalis/SwAPI-cli-search-tool/go/internal/api"
-	"github.com/jkapsalis/SwAPI-cli-search-tool/go/internal/cli"
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/api"
+	"github.com/jkapsalis/SwAPI-cli-search-tool/Go/internal/cli"
 )
 
 func main() {
