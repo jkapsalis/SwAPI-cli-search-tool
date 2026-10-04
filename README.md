@@ -1,139 +1,143 @@
-# Star Wars API cli search tool
+# SWAPI CLI Search Tool
 
-This is a cli tool to search for Star Wars characters to find 
-information about their height, mass and also about their homeworld details 
-using the SWAPI (star wars API).
+A command-line tool that searches Star Wars characters and their homeworlds using the [Star Wars API (SWAPI)](https://swapi.dev).
 
-----------------------------------
-#### Features
-1. *Character Search*
-* Gets and print information about a Star Wars character the user searched.
-* It has attributes such as height, mass, and birth year of the character.
-2. *Homeworld Details*
-* Prints the character's homeworld name, population, and orbital - rotation.
-* Calculates the time on the homeworld's character relates to Earth years and days and prints an ratio.
+The project started as a Python script and has been rebuilt in Go. The Go version is the current one. The original Python code is kept in [`Python_old_Version/`](Python_old_Version) for reference.
 
---------------------------------
-#### Prerequisites
+## Repository layout
 
-Install the __requirements.txt__ at my git repository :)
+| Folder | Contents |
+|---|---|
+| [`Go/`](Go) | Current version: CLI source, unit tests, build scripts |
+| [`Python_old_Version/`](Python_old_Version) | Original Python prototype (no longer maintained) |
 
-----------------------
-#### How to Run
-Clone the repository and follow the commands to run the script   :)
+## Quick start
 
-    ###for the character search###
-    python main.py search 'luke sky'
+Requires [Go 1.25+](https://go.dev/dl/).
 
-    ###for the homeworld details search of that character###
-    python main.py search'luke sky' --world
---------------------------------------------
-#### Sample Outputs
+Install the binary:
 
-![image](https://github.com/user-attachments/assets/fad76912-52ec-4ec6-b697-c379a46cd911)
+```bash
+go install github.com/jkapsalis/SwAPI-cli-search-tool/Go/cmd/swapi@latest
+swapi search "luke sky" --world
+```
 
+Or build from source:
 
-![image](https://github.com/user-attachments/assets/fbecc80e-d2d5-469a-8b53-91c287b86033)
+```bash
+git clone https://github.com/jkapsalis/SwAPI-cli-search-tool.git
+cd SwAPI-cli-search-tool/Go
+make build                              # creates bin/swapi
+./bin/swapi search "luke sky" --world
+```
 
----------------------------------------
-### Code Overview
+## Usage
 
-1. *def get_all_chars():*
+```text
+swapi search <name> [--world]
+```
 
-    Gets all the characters from the SWAPI.
-Converts the data response into JSON and extract all the info.
-2. *def get_char_details(char_url):*
+| Argument | Description |
+|---|---|
+| `<name>` | Full or partial character name. Quote names that contain spaces. |
+| `--world` | Also show each character's homeworld and compare its day and year length to Earth's. Can be placed before or after the name. |
 
-    Gets the properties of a character or a planet from the URL.
+Example:
 
-3. *def search_char_name(results, name):*
+```text
+$ swapi search "luke sky" --world
+Name: Luke Skywalker
+Height: 172 cm
+Mass: 77 kg
+Birth Year: 19BBY
 
-    Searches for a specific character by name from the list of fetched characters.
-4. *Main*  
+Homeworld: Tatooine
+Population: 200000
+Rotation Period: 23 hours
+Orbital Period: 304 days
 
-    Uses argparse to handle CLI commands and flags.
-Prints character and homeworld information based on the user's input.
+Day vs Earth: 0.96x
+Year vs Earth: 0.83x
+```
 
+A partial name such as `sky` returns every match (Luke, Anakin and Shmi Skywalker).
 
+| Exit code | Meaning |
+|---|---|
+| `0` | Success |
+| `1` | Character not found, or SWAPI returned an error |
+| `2` | Invalid input (unknown command, missing name, unknown flag) |
 
--------------------------------------------------------
+## Why the remake
 
-## Go version
+The Python version worked well as a first prototype: it was quick to write and easy to read. Moving it toward a tool other people can install and rely on exposed some limits:
 
-A Go port of the CLI lives in [`go/`](go). It has no third-party dependencies (Go 1.25+).
+- Running it required a Python installation plus `pip install -r requirements.txt`, which pins 16 packages even though only `requests` is used.
+- It showed only the first match from the first page of results.
+- Every HTTP request ran one after another.
+- API data was handled as untyped dictionaries, so a wrong field name failed only at runtime.
+- An API failure ended in a Python traceback, and there were no tests.
 
-    cd go
+The remake treats the project as a small piece of production software instead of a script: clear package boundaries, typed data, explicit error handling, automated tests, and reproducible builds.
 
-    ###for the character search (prints every match)###
-    go run ./cmd/swapi search 'luke sky'
+## Why Go over Python
 
-    ###for the homeworld details too (--world can go before or after the name)###
-    go run ./cmd/swapi search 'luke sky' --world
+| | Python (old) | Go (current) |
+|---|---|---|
+| Distribution | Python interpreter plus pip packages | One static binary, nothing else to install |
+| Dependencies | 16 pinned packages | Go standard library only |
+| Search results | First match only | All matches across all result pages |
+| Concurrency | Sequential requests | Result pages and homeworlds fetched in parallel; repeated requests served from a cache |
+| Data model | Dictionaries | Typed `Character` and `Planet` structs |
+| Error handling | Generic exceptions, bare `except` | Typed errors and distinct exit codes |
+| Testing | None | Unit tests run with the race detector, 94% statement coverage |
+| Platforms | Wherever Python is installed | Cross-compiled for Linux and macOS (amd64, arm64) and Windows (amd64) |
 
-    ###standalone binary for your platform -> bin/swapi###
-    make build
+The main reasons for choosing Go:
 
-    ###binaries for linux, macOS and windows -> dist/###
-    make release
+1. **Simple distribution.** Go compiles to a single binary with no runtime, so users download one file and run it.
+2. **Built-in concurrency.** Goroutines make it straightforward to fetch several pages and planets at the same time.
+3. **Static typing.** JSON responses are decoded into structs, so many mistakes are caught when the code compiles.
+4. **Explicit errors.** Every failure is returned as a value and handled on purpose, which leads to clear messages and exit codes.
+5. **Tooling included.** Formatting, vetting, testing, the race detector and cross-compilation all ship with the Go toolchain.
 
-    ###unit tests (offline, against a fake SWAPI server, with the race detector)###
-    make test
+Python is still a strong choice for quick scripts and data work. For a small CLI that should be easy to install and safe to run anywhere, Go is the better fit.
 
-Layout:
+## Project structure
 
-* `cmd/swapi` - entry point
-* `internal/cli` - argument parsing and output formatting
-* `internal/api` - SWAPI client: parallel page and homeworld fetching, in-memory cache
-* `internal/models` - `Character` and `Planet` structs
+```text
+Go/
+├── cmd/swapi/          Entry point: wires the API client into the CLI
+├── internal/cli/       Argument parsing and output formatting
+├── internal/api/       SWAPI client: HTTP calls, parallel fetching, cache
+├── internal/models/    Character and Planet types
+└── Makefile            build, test and release targets
+```
 
-Exit codes: `0` success, `1` character not found or API error, `2` invalid input.
+Each package has one job, and the CLI receives its API client as a parameter. This lets the tests point the CLI at a local fake SWAPI server instead of the real API.
 
--------------------------------------------------------
+## Development
 
-## Next Golang Objectives (Future Improvements)
+Run these from the `Go/` folder:
 
-As part of expanding this project and improving my backend development skills, I plan to reimplement and enhance this CLI tool using Golang. 
+| Command | What it does |
+|---|---|
+| `make build` | Builds a static binary for your platform in `bin/` |
+| `make test` | Runs all unit tests offline with the race detector |
+| `make release` | Builds binaries for Linux, macOS and Windows in `dist/` |
+| `make clean` | Removes `bin/` and `dist/` |
 
- The objectives are:
+The tests use Go's `testing` package and `net/http/httptest`. They cover search across several pages, not-found and HTTP errors, request cancellation, caching, parallel fetching, CLI flags, exit codes and the exact output format.
 
-### 1. Build a CLI Tool in Go ✅
-- Recreate the current Python CLI functionality using Go.
-- Use packages like `flag` or `cobra` for command-line argument parsing.
-- Maintain similar commands:
-  - Character search
-  - Homeworld details (`--world` flag equivalent)
+## Roadmap
 
-### 2. Work with HTTP Requests ✅
-- Use Go’s `net/http` package to fetch data from the SWAPI.
-- Handle API responses efficiently and explore concurrency where useful.
+All goals of the Go rewrite are complete:
 
-### 3. JSON Parsing and Structs ✅
-- Define Go structs for:
-  - Characters
-  - Planets (homeworld data)
-- Practice unmarshalling JSON responses into typed structs.
-
-### 4. Improve Performance ✅
-- Optimize API calls (e.g., caching results or reducing redundant requests).
-- Use goroutines to fetch character and homeworld data in parallel.
-
-### 5. Error Handling ✅
-- Implement robust error handling using Go’s explicit error system.
-- Handle edge cases such as:
-  - Character not found
-  - API errors or downtime
-  - Invalid input
-
-### 6. Modular Code Design ✅
-- Organize the project into packages (e.g., `api`, `models`, `cli`).
-- Improve code readability and maintainability.
-
-### 7. Cross-Platform CLI Distribution ✅
-- Compile the Go program into a standalone binary.
-- Allow users to run the tool without installing dependencies.
-
-### 8. Testing ✅
-- Write unit tests for:
-  - API calls
-  - Search functionality
-- Use Go’s built-in `testing` package.
+- [x] CLI in Go using the standard `flag` package, with the same `search` command and `--world` flag
+- [x] HTTP requests with `net/http`
+- [x] Typed structs for characters and planets
+- [x] Parallel fetching with goroutines and an in-memory cache
+- [x] Explicit error handling for not found, API errors and invalid input
+- [x] Modular packages: `api`, `models`, `cli`
+- [x] Standalone cross-platform binaries
+- [x] Unit tests for API calls and search
