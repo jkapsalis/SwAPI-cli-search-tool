@@ -58,45 +58,74 @@ Prints character and homeworld information based on the user's input.
 
 -------------------------------------------------------
 
+## Go version
+
+A Go port of the CLI lives in [`go/`](go). It has no third-party dependencies (Go 1.25+).
+
+    cd go
+
+    ###for the character search (prints every match)###
+    go run ./cmd/swapi search 'luke sky'
+
+    ###for the homeworld details too (--world can go before or after the name)###
+    go run ./cmd/swapi search 'luke sky' --world
+
+    ###standalone binary for your platform -> bin/swapi###
+    make build
+
+    ###binaries for linux, macOS and windows -> dist/###
+    make release
+
+Layout:
+
+* `cmd/swapi` - entry point
+* `internal/cli` - argument parsing and output formatting
+* `internal/api` - SWAPI client: parallel page and homeworld fetching, in-memory cache
+* `internal/models` - `Character` and `Planet` structs
+
+Exit codes: `0` success, `1` character not found or API error, `2` invalid input.
+
+-------------------------------------------------------
+
 ## Next Golang Objectives (Future Improvements)
 
 As part of expanding this project and improving my backend development skills, I plan to reimplement and enhance this CLI tool using Golang. 
 
  The objectives are:
 
-### 1. Build a CLI Tool in Go
+### 1. Build a CLI Tool in Go ✅
 - Recreate the current Python CLI functionality using Go.
 - Use packages like `flag` or `cobra` for command-line argument parsing.
 - Maintain similar commands:
   - Character search
   - Homeworld details (`--world` flag equivalent)
 
-### 2. Work with HTTP Requests
+### 2. Work with HTTP Requests ✅
 - Use Go’s `net/http` package to fetch data from the SWAPI.
 - Handle API responses efficiently and explore concurrency where useful.
 
-### 3. JSON Parsing and Structs
+### 3. JSON Parsing and Structs ✅
 - Define Go structs for:
   - Characters
   - Planets (homeworld data)
 - Practice unmarshalling JSON responses into typed structs.
 
-### 4. Improve Performance
+### 4. Improve Performance ✅
 - Optimize API calls (e.g., caching results or reducing redundant requests).
 - Use goroutines to fetch character and homeworld data in parallel.
 
-### 5. Error Handling
+### 5. Error Handling ✅
 - Implement robust error handling using Go’s explicit error system.
 - Handle edge cases such as:
   - Character not found
   - API errors or downtime
   - Invalid input
 
-### 6. Modular Code Design
+### 6. Modular Code Design ✅
 - Organize the project into packages (e.g., `api`, `models`, `cli`).
 - Improve code readability and maintainability.
 
-### 7. Cross-Platform CLI Distribution
+### 7. Cross-Platform CLI Distribution ✅
 - Compile the Go program into a standalone binary.
 - Allow users to run the tool without installing dependencies.
 
